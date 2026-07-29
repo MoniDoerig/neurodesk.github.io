@@ -183,12 +183,14 @@ In Settings, select "Additional Directory" in the sidebar, click "Change" to cho
 
 <img src="{{< relurl "/static/docs/getting-started/neurodeskapp/additional_dir.png" >}}" style="max-width: 600px; width: 100%;" alt="Additional Directory settings interface">
 
-{{% alert color="info" %}}
+{{% alert color="warning" %}}
 **macOS with Podman:** To mount an external drive, run these commands once:
 ```bash
 podman machine reset -f
 podman machine init --rootful --now -v /Volumes:/Volumes -v $HOME:$HOME podman-machine-default
 ```
+**Warning:** `podman machine reset -f` will delete all existing Podman machines, containers, and their data. Back up any important data stored inside Podman containers before running this command.
+
 Then set the path in the Neurodesk App settings.
 {{% /alert %}}
 

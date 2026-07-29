@@ -10,14 +10,21 @@ description: >
 
 If you see `/var/run/docker.sock: connect: permission denied`:
 
-```bash
-sudo groupadd docker
-sudo usermod -aG docker $USER
-newgrp docker
+1. **Add your user to the `docker` group** (creates the group first if it doesn't exist):
+    ```bash
+    sudo groupadd docker
+    sudo usermod -aG docker $USER
+    newgrp docker
+    ```
 
-sudo chown root:docker /var/run/docker.sock
-sudo chmod 666 /var/run/docker.sock
-```
+2. **Set the socket permissions** so only `root` and members of the `docker` group can access it:
+    ```bash
+    sudo chown root:docker /var/run/docker.sock
+    sudo chmod 660 /var/run/docker.sock
+    ```
+    This sets the socket to `rw-rw----`, removing access for all other users. You must be in the `docker` group (step 1) for this to work.
+
+3. **Log out and back in** (or reboot) for the group change to take full effect. The `newgrp` command above applies it to the current shell only.
 
 ## AppArmor sandbox error (Ubuntu 24.04)
 
