@@ -58,7 +58,7 @@ Double-click the downloaded `.exe` file. Accept to install from an unknown publi
 
 | Distribution | x64 | arm64 |
 |---|---|---|
-| Debian / Ubuntu | [.deb (x64)](https://github.com/neurodesk/neurodesk-app/releases/latest/download/NeurodeskApp-Setup-Debian-x64.deb) | [.deb (arm64)](https://github.com/neurodesk/neurodesk-app/releases/download/v1.8.0/NeurodeskApp-Setup-Debian-arm64.deb) |
+| Debian / Ubuntu | [.deb (x64)](https://github.com/neurodesk/neurodesk-app/releases/latest/download/NeurodeskApp-Setup-Debian-x64.deb) | [.deb (arm64)](https://github.com/neurodesk/neurodesk-app/releases/download/latest/NeurodeskApp-Setup-Debian-arm64.deb) |
 | Fedora / RHEL / SUSE | [.rpm (x64)](https://github.com/neurodesk/neurodesk-app/releases/latest/download/NeurodeskApp-Setup-Fedora-x64.rpm) | [.rpm (arm64)](https://github.com/neurodesk/neurodesk-app/releases/latest/download/NeurodeskApp-Setup-Fedora-arm64.rpm) |
 | Arch-based | [AUR package](https://aur.archlinux.org/packages/neurodeskapp-bin) | |
 
@@ -175,25 +175,13 @@ Enter the URL of the server. If authentication is required, include the token as
 
 ## Data storage
 
-Neurodesk stores data in the following default locations:
-
-| Location | Path |
-|---|---|
-| Inside the app | `/home/jovyan/neurodesktop-storage` |
-| On your machine (macOS/Linux) | `~/neurodesktop-storage` |
-| On your machine (Windows) | `C:/neurodesktop-storage` |
-
-User can set `neurodesktop-storage` to be in different location if need to.
+For a full overview of how data storage works in Neurodesk (default paths, cloud storage, transferring files), see [Data Storage](/getting-started/neurodesktop/storage/#local-storage).
 
 ### Adding a custom data directory
 
 In Settings, select "Additional Directory" in the sidebar, click "Change" to choose a local directory, then click "Apply & restart". The directory will appear at `/home/jovyan/data` inside the app.
 
 <img src="{{< relurl "/static/docs/getting-started/neurodeskapp/additional_dir.png" >}}" style="max-width: 600px; width: 100%;" alt="Additional Directory settings interface">
-
-{{% alert color="info" %}}
-**Windows:** Mounting external hard drives is not currently supported. Copy data to your local disk first.
-{{% /alert %}}
 
 {{% alert color="info" %}}
 **macOS with Podman:** To mount an external drive, run these commands once:
