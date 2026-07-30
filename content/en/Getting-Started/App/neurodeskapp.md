@@ -63,12 +63,14 @@ Double-click the downloaded `.exe` file. Windows will show an "Unknown publisher
 | Arch-based | [AUR package](https://aur.archlinux.org/packages/neurodeskapp-bin) | |
 
 **Install:**
+Replace `<arch>` in the following command with the downloaded executable file suited for your system architecture (x64 or arm64)
+
 ```bash
 # Debian / Ubuntu
-sudo apt install -f ./NeurodeskApp-Setup-Debian.deb
+sudo apt install -f ./NeurodeskApp-Setup-Debian-<arch>.deb
 
 # Fedora / RHEL / SUSE
-sudo rpm -i NeurodeskApp-Setup-Fedora.rpm
+sudo rpm -i NeurodeskApp-Setup-Fedora-<arch>.rpm
 
 # Arch-based
 yay neurodesk
