@@ -38,7 +38,8 @@ sudo rm /usr/bin/neurodeskapp
 rm -rf ~/.config/neurodeskapp
 
 # Arch-based
-sudo pacman -Rs neurodeskapp-bin
+sudo pacman -Rs neurodeskapp-bin    # -Rs removes all orphaned deps
+rm -rf ~/.config/neurodeskapp
 ```
 
 {{% /tab %}}

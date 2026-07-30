@@ -30,7 +30,7 @@ If you see `/var/run/docker.sock: connect: permission denied`:
 
 If you see `FATAL:setuid_sandbox_host.cc(158)] The SUID sandbox helper binary was found, but is not configured correctly`, create the file `/etc/apparmor.d/neurodeskapp` with this content:
 
-```
+```apparmor
 # This profile allows everything and only exists to give the
 # application a name instead of having the label "unconfined"
 
@@ -57,7 +57,14 @@ The steps below were validated with **Podman 3.4.4 on Ubuntu 22**. Replace every
 
 ### 1. Install the Podman shim script
 
-Some environments need a wrapper around `podman` to fix an NFS volume-mount bug and to sanitize the UID/GID that the App passes to the container. Create an executable file named `podman` in `~/.local/bin/` (owned by your user), so it is found on `PATH` before the real binary:
+Some environments need a wrapper around `podman` to fix an NFS volume-mount bug and to sanitize the UID/GID that the App passes to the container.
+
+Create the directory if it doesn't already exist:
+```bash
+mkdir -p ~/.local/bin
+```
+
+Then create a file named `~/.local/bin/podman` with the following content. This shim will be found on `PATH` before the real `podman` binary:
 
 ```bash
 #!/bin/bash
@@ -116,10 +123,14 @@ podman pull ghcr.io/neurodesk/neurodesktop/neurodesktop:<version>
 podman tag ghcr.io/neurodesk/neurodesktop/neurodesktop:<version> docker.io/vnmd/neurodesktop:<version>
 ```
 
-Then stop any lingering Podman/Neurodesk processes and migrate Podman:
+Then stop any lingering Podman processes (e.g. a hung pull) and Neurodesk containers, and migrate Podman. The App creates containers named `neurodeskapp` or `neurodeskapp-<port>`:
 
 ```bash
-pkill -9 -u <USERNAME> -f "podman|neurodesk"
+# Stop any running Neurodesk containers
+podman stop neurodeskapp 2>/dev/null
+podman rm -f neurodeskapp 2>/dev/null
+# Force-kill any hung podman or neurodeskapp processes
+pkill -9 -u <USERNAME> -f "podman|neurodeskapp"
 podman system migrate
 ```
 
@@ -148,8 +159,11 @@ Then launch the App from the application menu (the shortcut), **not** from the C
 If a session fails to start, delete the broken home volume and try again:
 
 ```bash
-# Kill any lingering container attempts
-pkill -9 -u $USER -f "podman|neurodesk"
+# Stop any running Neurodesk containers
+podman stop neurodeskapp 2>/dev/null
+podman rm -f neurodeskapp 2>/dev/null
+# Force-kill any hung processes
+pkill -9 -u $USER -f "podman|neurodeskapp"
 
 # Delete the broken home volume
 podman volume rm neurodesk-home
@@ -158,8 +172,14 @@ podman volume rm neurodesk-home
 If Podman's storage database is incompatible (for example after a Podman upgrade), reset it:
 
 ```bash
-podman system reset --force
+podman system reset -f
 ```
+
+{{% alert color="warning" %}}
+**Warning:** `podman machine reset -f` will delete all existing Podman machines, containers, and their data. Back up any important data stored inside Podman containers before running this command.
+
+Then set the path in the Neurodesk App settings.
+{{% /alert %}}
 
 If that still doesn't work, remove the stale storage config:
 
