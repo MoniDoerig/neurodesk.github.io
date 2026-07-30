@@ -12,7 +12,7 @@ If you see `/var/run/docker.sock: connect: permission denied`:
 
 1. **Add your user to the `docker` group** (creates the group first if it doesn't exist):
     ```bash
-    sudo groupadd docker
+    getent group docker >/dev/null || sudo groupadd docker
     sudo usermod -aG docker $USER
     newgrp docker
     ```
