@@ -49,7 +49,7 @@ brew install neurodesk/homebrew-neurodesk/neurodeskapp
 {{% /alert %}}
 
 **Install:**
-Double-click the downloaded `.exe` file. Accept to install from an unknown publisher with "Yes", then accept the license agreement and click "Finish".
+Double-click the downloaded `.exe` file. Windows will show an "Unknown publisher" warning because the installer is not code-signed. This is expected — the installer is an official release from the [neurodesk-app GitHub repository](https://github.com/neurodesk/neurodesk-app/releases). Click "Yes" to proceed, then accept the license agreement and click "Finish".
 
 {{% /tab %}}
 {{% tab header="Linux" %}}
@@ -167,7 +167,7 @@ Click "Open Local Neurodesk" to launch a local session. This opens a JupyterLab 
 
 Click "Connect to remote Neurodesk server" to connect to a server running elsewhere.
 
-Enter the URL of the server. If authentication is required, include the token as a query parameter: `/lab?token=<token-value>`. Press Enter to connect.
+Select the provided servers in the list or Enter the URL of the server and press Enter to connect.
 
 <img src="{{< relurl "/static/docs/getting-started/neurodeskapp/connect-to-server.png" >}}" style="max-width: 600px; width: 100%;" alt="Connect to server">
 
