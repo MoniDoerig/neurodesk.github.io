@@ -84,7 +84,13 @@ When running Neurodesktop locally, there are two storage locations to be aware o
 
 - **Home directory** (`/home/jovyan`): This is the Linux filesystem inside the Docker container. Files saved here will persist across container restarts (thanks to a Docker volume), but will be lost if you remove the container or its volumes. Think of this as your working space, not your safe storage.
 
-- **Neurodesktop storage** (`/neurodesktop-storage`): This is a direct link to a folder on your host computer (`C:/neurodesktop-storage` on Windows, `~/neurodesktop-storage` on Mac/Linux). Files saved here live on your actual filesystem, outside of Docker. They will persist regardless of what happens to the container.
+- **Neurodesktop storage** (`/neurodesktop-storage`): This is a direct link to a folder on your host computer. Files saved here live on your actual filesystem, outside of Docker. They will persist regardless of what happens to the container.
+
+| Location | Path |
+|---|---|
+| Inside Neurodesk | `/neurodesktop-storage` |
+| Host machine (macOS/Linux) | `~/neurodesktop-storage` |
+| Host machine (Windows) | `C:/neurodesktop-storage` |
 
 > **Important:** Always save data you want to keep to `/neurodesktop-storage` (the "Storage" folder on the desktop). Files saved elsewhere inside Neurodesktop may be lost when updating or recreating the container.
 
