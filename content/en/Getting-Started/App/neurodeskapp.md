@@ -58,7 +58,7 @@ Double-click the downloaded `.exe` file. Windows will show an "Unknown publisher
 
 | Distribution | x64 | arm64 |
 |---|---|---|
-| Debian / Ubuntu | [.deb (x64)](https://github.com/neurodesk/neurodesk-app/releases/latest/download/NeurodeskApp-Setup-Debian-x64.deb) | [.deb (arm64)](https://github.com/neurodesk/neurodesk-app/releases/download/latest/NeurodeskApp-Setup-Debian-arm64.deb) |
+| Debian / Ubuntu | [.deb (x64)](https://github.com/neurodesk/neurodesk-app/releases/latest/download/NeurodeskApp-Setup-Debian-x64.deb) | [.deb (arm64)](https://github.com/neurodesk/neurodesk-app/releases/latest/download/NeurodeskApp-Setup-Debian-arm64.deb) |
 | Fedora / RHEL / SUSE | [.rpm (x64)](https://github.com/neurodesk/neurodesk-app/releases/latest/download/NeurodeskApp-Setup-Fedora-x64.rpm) | [.rpm (arm64)](https://github.com/neurodesk/neurodesk-app/releases/latest/download/NeurodeskApp-Setup-Fedora-arm64.rpm) |
 | Arch-based | [AUR package](https://aur.archlinux.org/packages/neurodeskapp-bin) | |
 
