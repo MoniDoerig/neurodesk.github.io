@@ -187,13 +187,13 @@ def generate_figure(releases: list[ReleaseDownloads], output: Path) -> None:
     axis.set_xlim(-0.5, len(releases) - 0.15)
     axis.set_xticks(x)
     axis.set_xticklabels(
-        [release.tag for release in releases],
+        [f"{release.tag}\n{release.published_at:%Y-%m-%d}" for release in releases],
         rotation=48,
         ha="right",
         fontsize=9,
     )
     axis.set_ylabel("Downloads per release (log scale)")
-    axis.set_xlabel("Neurodesk App release")
+    axis.set_xlabel("Neurodesk App release and published date")
 
     for spine in ("top", "right"):
         axis.spines[spine].set_visible(False)
