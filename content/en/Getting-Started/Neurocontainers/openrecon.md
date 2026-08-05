@@ -103,6 +103,52 @@ Submit the container to the [openrecon repository](https://github.com/neurodesk/
 
 Here is an example: [openreconexample](https://github.com/neurodesk/openrecon/tree/main/recipes/openreconexample).
 
+## Installing OpenRecon packages
+
+Make sure that no protocol is open, because an open protocol can prevent installation of a new package.
+
+### Installing a new OpenRecon package on NumarisX VA70 and above (e.g. XB10)
+
+For software versions NumarisX VA70 and above, such as NumarisX XB10, use the Numaris/Edge routine for installing OpenRecon applications. A short summary of the installation steps is provided below.
+
+1. Exit Kiosk mode of your MRAWP via the keyboard shortcut `[Tab]-[Del]-[Num+]`.
+2. Create a folder under `C:\Temp\`, e.g. `C:\Temp\OR\Packages`.
+3. Copy the OpenRecon package to `C:\Temp\OR\Packages`.
+4. Press the Windows key and open an elevated admin CMD shell.
+5. Change directory to `%MREDGEHOME%`:
+
+   ```bat
+   cd %MREDGEHOME%
+   ```
+
+6. Start the installation of the OpenRecon package:
+
+   ```bat
+   syngo.MR.Digi.Utils.Console.exe store --install-package C:\Temp\OR\Packages\OpenRecon_package.zip
+   ```
+
+7. The installation will take a couple of minutes. Check the progress of the installation via:
+
+   ```bat
+   syngo.MR.Digi.Utils.Console.exe store --list
+   ```
+
+### Installing and testing a new OpenRecon package on XA60 and XA61
+
+Copy the OpenRecon zip file into `C:\Program Files\Siemens\Numaris\OperationalManagement\FileTransfer\incoming`.
+
+Wait for the file to disappear.
+
+Check whether it is being installed by watching `C:\ProgramData\Siemens\Numaris\log\syngo.MR.HostInfra.OpenRecon.Watcher`.
+
+It should first create a 0 KB text file with the container name and version.
+
+The text file then fills to about 100-200 KB.
+
+Once the log file is written, you can open a protocol and check whether the package is available.
+
+Run the sequence with OpenRecon enabled and check for errors in the log viewer at `C:\ProgramData\Siemens\Numaris\log\OpenRecon.utr`.
+
 ## Detailed instructions for building on GitHub directly
 
 Contributed by Kerrin Pine.
@@ -138,24 +184,6 @@ You need a public GitHub account so the container can be submitted to the public
 13. The second step is to write a recipe for [`neurodesk/openrecon`](https://github.com/neurodesk/openrecon). Because it is a separate repository, fork it, navigate to `recipes`, create a folder for your project, and add `OpenReconLabel.json` and `params.sh` with the version number. `OpenReconLabel.json` defines how the container description and UI options appear on the scanner. Then open a pull request. Updating the version number will trigger the container to be rebuilt, and instructions for downloading and installing the container will appear as an issue in that repository.
 
 ## Tips, tricks, and troubleshooting for OpenRecon
-
-### Installing and testing a new OpenRecon package
-
-Make sure that no protocol is open, because an open protocol can prevent installation of a new package.
-
-Copy the OpenRecon zip file into `C:\Program Files\Siemens\Numaris\OperationalManagement\FileTransfer\incoming`.
-
-Wait for the file to disappear.
-
-Check whether it is being installed by watching `C:\ProgramData\Siemens\Numaris\log\syngo.MR.HostInfra.OpenRecon.Watcher`.
-
-It should first create a 0 KB text file with the container name and version.
-
-The text file then fills to about 100-200 KB.
-
-Once the log file is written, you can open a protocol and check whether the package is available.
-
-Run the sequence with OpenRecon enabled and check for errors in the log viewer at `C:\ProgramData\Siemens\Numaris\log\OpenRecon.utr`.
 
 ### Sent image values must fit within a 4096-value range
 
