@@ -1,6 +1,6 @@
 ---
-title: "XNAT at the Lucas Centre"
-linkTitle: "XNAT (Lucas Centre)"
+title: "XNAT at the Lucas Centre Stanford"
+linkTitle: "XNAT Lucas"
 weight: 4
 aliases:
 - /docs/getting-started/installations/xnat-lucas
@@ -18,7 +18,7 @@ The Stanford Lucas Centre XNAT is available at [xnat-lucas.neurodesk.org](https:
 
 You will need:
 
-- your XNAT username,
+- your XNAT username (which is your stanford useraccount),
 - the project name you want to create, and
 - a subject identifier that is appropriate for your study.
 
@@ -141,6 +141,34 @@ Neurodesk can be launched from an XNAT project, with access limited to the proje
 ![XNAT Start Jupyter Notebook dialog with NeuroDesk selected and hardware resource options](/static/docs/getting-started/installations/xnat-lucas/xnat-neurodesk-start.png)
 
 ![Neurodesk JupyterLab session showing mounted XNAT data and an interactive NIfTI image viewer](/static/docs/getting-started/installations/xnat-lucas/xnat-neurodesk-jupyter.png)
+
+### Upload processed data back to XNAT
+
+You can send files produced in your Neurodesk session back to XNAT:
+
+1. Open the JupyterLab **Launcher** and select **XNAT Upload**.
+
+   ![Neurodesk JupyterLab Launcher showing the XNAT Upload tile](/static/docs/getting-started/installations/xnat-lucas/xnat-upload.png)
+
+2. Before connecting for the first time, create an alias token in XNAT. Open your XNAT user account, select **Manage Alias Tokens**, and click **Create Alias Token**.
+
+   ![XNAT user profile page for creating and managing alias tokens](/static/docs/getting-started/installations/xnat-lucas/xnat-alias-token.png)
+
+3. Click **View** beside the new token to display its token name and secret.
+4. Return to **XNAT Upload**, enter the token name in **Alias Token**, enter its secret in **Secret**, and click **Connect to XNAT**.
+
+   ![XNAT Upload authentication form for entering an alias token and secret](/static/docs/getting-started/installations/xnat-lucas/xnat-upload-token.png)
+
+5. Select the destination project and enter the subject and session IDs. Configure the modality, scan ID, scan type, and resource label as required. Leave **Scan ID** empty when uploading at session level.
+6. Select the processed files in the file browser, or add their paths manually.
+
+   ![XNAT Upload form for selecting the XNAT destination and processed files](/static/docs/getting-started/installations/xnat-lucas/xnat-upload-config.png)
+
+7. Click **Upload**. The selected files will be stored in the configured XNAT project, subject, session, and optional scan location.
+
+{{< alert color="warning" >}}
+An alias token and its secret authenticate actions as your XNAT account. Treat them like a password: do not share them or include them in screenshots, and remove tokens that are no longer needed.
+{{< /alert >}}
 
 When you have finished, save your work and close the session. Your personal workspace is persistent, while inactive compute sessions may be stopped automatically.
 
