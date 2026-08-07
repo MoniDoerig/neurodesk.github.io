@@ -124,7 +124,262 @@ sf-build --help
 
 Activate the environment again with `source .venv/bin/activate` whenever you open a new terminal.
 
-## 3. Create the Neurocontainer recipe
+## 3. Complete example: build and run openreconi2iexample
+
+Run this example before creating your own recipe. It proves that Python, the Neurocontainers builder, Docker's x86_64 support, the Python MRD server, and local scanner packaging all work together.
+
+All commands in this section start in the root of your `neurocontainers` checkout with its Python 3.13 environment active:
+
+```bash
+cd /PATH/TO/neurocontainers
+source .venv/bin/activate
+python --version  # Must report Python 3.13.x
+
+EXAMPLE_VERSION=$(python -c 'import yaml; print(yaml.safe_load(open("recipes/openreconi2iexample/build.yaml"))["version"])')
+echo "Building openreconi2iexample ${EXAMPLE_VERSION}"
+```
+
+### Optional: Validate the example
+
+Validate the recipe and scanner label, then run its focused Python tests:
+
+```bash
+python builder/validation.py \
+  recipes/openreconi2iexample/build.yaml --verbose
+
+python workflows/validate_openrecon_labels.py \
+  recipes/openreconi2iexample/OpenReconLabel.json
+
+python -m pytest \
+  recipes/openreconi2iexample/test_openreconi2iexample.py -q
+```
+
+### Check the bundled DICOM test data
+
+The [`openreconi2iexample` recipe now includes](https://github.com/NeuroDesk/neurocontainers/commit/fd0279656fb02541d01229d7d00e4fd6f872ed2c) a DICOM test archive and its matching conversion script. Confirm that both files are present in your checkout:
+
+```bash
+ls -lh \
+  recipes/openreconi2iexample/GR_M_5_QSM_p2_1mmIso_TE20.zip \
+  recipes/openreconi2iexample/dicom2mrd.py
+```
+
+The archive is approximately 9 MB and contains 160 `.IMA` DICOM files. The conversion will create a much larger local MRD file, so keep generated data under `local-test`. The following exclusion is local to your checkout and does not modify the repository's shared `.gitignore`:
+
+```bash
+grep -qxF 'recipes/openreconi2iexample/local-test/' .git/info/exclude || \
+  echo 'recipes/openreconi2iexample/local-test/' >> .git/info/exclude
+
+mkdir -p recipes/openreconi2iexample/local-test
+```
+
+Confirm that `git status --short` does not list `local-test`. Do not add other clinical DICOM data to the repository; use only data that is appropriately de-identified and that you are permitted to process.
+
+### Build the x86_64 image and enter it
+
+`sf-login` stages the recipe, builds `openreconi2iexample:<version>` for `linux/amd64`, mounts the recipe directory at `/buildhostdirectory`, and opens a shell in the new container:
+
+```bash
+sf-login openreconi2iexample --recreate --architecture x86_64
+```
+
+The first build can take a while. On Apple Silicon or another ARM64 host, Docker runs this x86_64 image through emulation.
+
+Inside the container, verify the installed example and server:
+
+```bash
+openreconi2iexample
+python3 /opt/code/python-ismrmrd-server/main.py --help | head
+```
+
+The first command should print `openreconi2iexample` followed by the current recipe version.
+
+### Convert the bundled DICOM data to an ISMRMRD HDF5 file
+
+The recipe directory is mounted at `/buildhostdirectory`, so both committed test assets are available inside the container. First extract the archive there using Python's standard-library ZIP support:
+
+```bash
+python3 -m zipfile -e \
+  /buildhostdirectory/GR_M_5_QSM_p2_1mmIso_TE20.zip \
+  /buildhostdirectory/local-test/dicom
+
+find /buildhostdirectory/local-test/dicom -type f \
+  \( -iname '*.ima' -o -iname '*.dcm' \) | wc -l
+```
+
+The count should be `160`. Now run the **recipe-local** `dicom2mrd.py` inside the container. It reads the DICOM tree recursively and writes image MRD data to the `dataset` group in an ISMRMRD HDF5 file:
+
+```bash
+python3 /buildhostdirectory/dicom2mrd.py \
+  -o /buildhostdirectory/local-test/input_data.h5 \
+  -g dataset \
+  /buildhostdirectory/local-test/dicom
+```
+
+The converter should report one series containing 160 images. Verify the resulting file before starting the server:
+
+```bash
+ls -lh /buildhostdirectory/local-test/input_data.h5
+
+python3 - <<'PY'
+import ismrmrd
+
+path = "/buildhostdirectory/local-test/input_data.h5"
+dataset = ismrmrd.Dataset(path, "dataset", create_if_needed=False)
+count = dataset.number_of_images("image_0")
+dataset.close()
+
+print(f"{path}: image_0 contains {count} image(s)")
+assert count == 160, f"Expected 160 converted images, found {count}"
+PY
+```
+
+The generated HDF5 file is approximately 57 MB. It remains on the host under `recipes/openreconi2iexample/local-test/input_data.h5` after you exit the container.
+
+### Start the MRD server and run the client
+
+Still inside the container, write the parameter payload that reproduces the scanner label's default behavior:
+
+```bash
+cat > /buildhostdirectory/local-test/openreconi2iexample.json <<'JSON'
+{
+  "parameters": {
+    "sendoriginal": true,
+    "invert": true,
+    "segment": true,
+    "segmentheadergeometry": "2d_segment_header"
+  }
+}
+JSON
+```
+
+The MRD client automatically sends this file as additional configuration because its basename matches `-c openreconi2iexample`. Start the server in the background, send the input, and stop the server afterward:
+
+```bash
+python3 /opt/code/python-ismrmrd-server/main.py \
+  -v -r -H=0.0.0.0 -p=9002 -s -S=/tmp/share/saved_data \
+  > /buildhostdirectory/local-test/server.log 2>&1 &
+server_pid=$!
+trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+sleep 2
+
+cd /buildhostdirectory/local-test
+python3 /opt/code/python-ismrmrd-server/client.py \
+  -G dataset \
+  -o openrecon_output.h5 \
+  input_data.h5 \
+  -c openreconi2iexample
+
+kill "$server_pid" 2>/dev/null || true
+wait "$server_pid" 2>/dev/null || true
+trap - EXIT
+```
+
+This explicit parameter payload sends original images, inverted images, and a simple foreground segmentation. For a straightforward single-series magnitude input, expect output groups `image_99`, `image_100`, and `image_101`. More complex inputs can be split into additional groups.
+
+Count the input and output MRD images and inspect the runtime markers:
+
+```bash
+python3 - <<'PY'
+import ismrmrd
+
+for path in (
+    "/buildhostdirectory/local-test/input_data.h5",
+    "/buildhostdirectory/local-test/openrecon_output.h5",
+):
+    dataset = ismrmrd.Dataset(path, "dataset", create_if_needed=False)
+    image_groups = [
+        group for group in dataset.list()
+        if group.startswith(("image_", "images_"))
+    ]
+    counts = {
+        group: dataset.number_of_images(group)
+        for group in image_groups
+    }
+    print(f"{path}: {sum(counts.values())} image(s) {counts}")
+    dataset.close()
+PY
+
+grep -E 'openreconi2iexample runtime version|OPENRECONI2I_BATCH' \
+  /buildhostdirectory/local-test/server.log | tail -20
+```
+
+Open `recipes/openreconi2iexample/local-test/openrecon_output.h5` with the VS Code H5Web extension to inspect the returned images. Install it locally if needed:
+
+```bash
+code --install-extension h5web.vscode-h5web
+```
+
+Exit the container, run the deploy smoke test against the image, and prove that the expected local tag exists:
+
+```bash
+exit
+
+sf-test openreconi2iexample --architecture x86_64
+docker image inspect "openreconi2iexample:${EXAMPLE_VERSION}" \
+  --format '{{.RepoTags}} {{.Architecture}}'
+```
+
+The image inspection should show the expected versioned tag and `amd64` architecture.
+
+### Build the example OpenRecon and FIRE packages
+
+From the directory containing your `neurocontainers` checkout, clone the packaging repository and create its Python 3.13 environment:
+
+```bash
+cd ..
+git clone https://github.com/neurodesk/openrecon.git
+cd openrecon
+
+python3.13 -m venv .venv
+source .venv/bin/activate
+python --version  # Must report Python 3.13.x
+python -m pip install --upgrade pip
+python -m pip install jsonschema packaging
+```
+
+The checked-in `recipes/openreconi2iexample/params.sh` must name the same version you just built. Assert that it matches before starting the package build:
+
+```bash
+grep -E '^export (toolName|version|baseDockerImage)=' \
+  recipes/openreconi2iexample/params.sh
+
+PACKAGE_VERSION=$(
+  source recipes/openreconi2iexample/params.sh
+  printf '%s' "$version"
+)
+test "$PACKAGE_VERSION" = "$EXAMPLE_VERSION" || {
+  echo "Version mismatch: container=$EXAMPLE_VERSION package=$PACKAGE_VERSION" >&2
+  exit 1
+}
+
+docker image inspect "openreconi2iexample:${EXAMPLE_VERSION}" >/dev/null
+```
+
+If the two repositories have moved to different example versions, update both checkouts to current `main` and rebuild the Neurocontainer before continuing. Do not package one version under another version's metadata.
+
+Build both scanner formats from the local Docker image:
+
+```bash
+cd recipes/openreconi2iexample
+BUILD_PACKAGE_SELECTION=both /bin/bash ../build.sh
+
+find openrecon -maxdepth 1 -name 'OpenRecon_*.zip' -print
+find fire -maxdepth 1 -type d -name 'FIRE_*' -print
+```
+
+For version `1.0.89`, the expected outputs are:
+
+```text
+openrecon/OpenRecon_neurodesk_openreconi2iexample_V1.0.89.zip
+fire/FIRE_neurodesk_openreconi2iexample_V1.0.89/
+```
+
+The version changes as the reference recipe is released. Treat the filenames printed by the build as authoritative. The OpenRecon zip is installable through the OpenRecon package mechanism; the FIRE directory contains its `Ice` tree and `INSTALL_FIRE.txt`.
+
+Once this complete example works, return to your Neurocontainers checkout and adapt the recipe for your own application.
+
+## 4. Create the Neurocontainer recipe
 
 Use a short lowercase name containing only letters and numbers, for example `myrecon`. Published OpenRecon recipe names must not contain underscores.
 
@@ -176,7 +431,7 @@ Keep `VERSION_WILL_BE_REPLACED_BY_SCRIPT` in the label's version and version-der
 Keep `OpenReconLabel.json` in the Neurocontainers recipe. Current release automation copies it into OpenRecon and creates `params.sh`; contributors no longer need to maintain a second copy manually. If `OpenReconREADME.md` is present, the automation also copies it to the openrecon package repository as `README.md`.
 
 
-## 4. Validate, build, and test locally
+## 5. Validate, build, and test locally
 
 Run metadata validation and any focused tests first:
 
@@ -233,7 +488,7 @@ sf-test myrecon --architecture x86_64
 
 `sf-test` checks the built image's deployment contract. Your `fulltest.yaml` is exercised by the current pull-request candidate workflow; it should contain meaningful application/runtime assertions.
 
-## 5. Build OpenRecon and FIRE packages locally
+## 6. Build OpenRecon and FIRE packages locally
 
 First build the Neurocontainer as described above. The local Docker image must be tagged `myrecon:<version>`, which is the tag produced by `sf-build` and `sf-login`.
 
@@ -400,7 +655,7 @@ You therefore normally submit only the Neurocontainers pull request. Do not open
    docker version
    ```
 
-5. Follow sections 3 and 4 of this page in the Codespaces terminal. The `openreconi2iexample` recipe, `fulltest.yaml`, `sf-login`, and MRD server/client commands are the same as in a local Linux environment.
+5. Follow section 3 to run the complete example, then sections 4 and 5 for your own recipe. The `openreconi2iexample` recipe, `fulltest.yaml`, `sf-login`, and MRD server/client commands are the same as in a local Linux environment.
 6. Use the preinstalled H5Web extension to inspect `.h5` outputs. Install a NIfTI viewer extension only if your pipeline produces NIfTI intermediates.
 7. Commit and push the recipe as described above. Never upload identifiable DICOM data to the codespace or commit private test data.
 
@@ -418,7 +673,7 @@ python --version  # Must report Python 3.13.x
 python -m pip install jsonschema packaging
 ```
 
-Then follow section 5, using `/workspaces/neurocontainers` as the Neurocontainers checkout. FIRE images can be large and Codespaces storage is finite. Check `df -h` before building both packages, select a larger codespace if necessary, and stop or delete the codespace when you finish to avoid unnecessary usage charges.
+Then follow section 6, using `/workspaces/neurocontainers` as the Neurocontainers checkout. FIRE images can be large and Codespaces storage is finite. Check `df -h` before building both packages, select a larger codespace if necessary, and stop or delete the codespace when you finish to avoid unnecessary usage charges.
 
 Do not treat a codespace as an unattended build service. [GitHub's default idle timeout is 30 minutes and the maximum user-configurable timeout is 4 hours](https://docs.github.com/en/codespaces/setting-your-user-preferences/setting-your-timeout-period-for-github-codespaces); when a codespace stops, its running processes stop too. Commit and push source changes, copy any required local artifacts, and use the upstream GitHub Actions pull-request workflow for a build that must continue without an interactive development session.
 
