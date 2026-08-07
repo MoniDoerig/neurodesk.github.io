@@ -100,3 +100,6 @@ These browser-based webapps are built and maintained by collaborators in the wid
 ### General Image processing in the browser
 
 - <a href="https://niivue.github.io/niivue-niimath/" target="_blank" rel="noopener noreferrer">niivue.github.io/niivue-niimath</a>
+
+### qMRust implements methods from qMRLab in a webapp
+- <a href="https://qmrlab.org/qmrust/app/" target="_blank" rel="noopener noreferrer">qmrlab.org/qmrust/app/</a>
