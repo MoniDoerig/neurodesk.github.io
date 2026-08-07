@@ -17,7 +17,7 @@ AIS is a national platform for secure imaging management, analysis, informatics,
 This option is most relevant for:
 
 - imaging facilities and research platforms using XNAT,
-- institutions that need governed access to imaging data and analysis environments,
+- institutions that need governed access to imaging data and analysis environments.
 
 ## Deployment resources
 
