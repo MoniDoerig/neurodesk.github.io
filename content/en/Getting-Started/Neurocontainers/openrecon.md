@@ -134,9 +134,6 @@ All commands in this section start in the root of your `neurocontainers` checkou
 cd /PATH/TO/neurocontainers
 source .venv/bin/activate
 python --version  # Must report Python 3.13.x
-
-EXAMPLE_VERSION=$(python -c 'import yaml; print(yaml.safe_load(open("recipes/openreconi2iexample/build.yaml"))["version"])')
-echo "Building openreconi2iexample ${EXAMPLE_VERSION}"
 ```
 
 ### Optional: Validate the example
@@ -155,14 +152,6 @@ python -m pytest \
 ```
 
 ### Check the bundled DICOM test data
-
-The [`openreconi2iexample` recipe now includes](https://github.com/NeuroDesk/neurocontainers/commit/fd0279656fb02541d01229d7d00e4fd6f872ed2c) a DICOM test archive and its matching conversion script. Confirm that both files are present in your checkout:
-
-```bash
-ls -lh \
-  recipes/openreconi2iexample/GR_M_5_QSM_p2_1mmIso_TE20.zip \
-  recipes/openreconi2iexample/dicom2mrd.py
-```
 
 The archive is approximately 9 MB and contains 160 `.IMA` DICOM files. The conversion will create a much larger local MRD file, so keep generated data under `local-test`. The following exclusion is local to your checkout and does not modify the repository's shared `.gitignore`:
 
