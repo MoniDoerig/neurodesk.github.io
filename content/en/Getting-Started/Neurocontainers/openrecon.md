@@ -282,7 +282,7 @@ Build both scanner formats from the local Docker image:
 
 ```bash
 cd recipes/openreconi2iexample
-/bin/bash ../build.sh
+/bin/bash ../build.sh --local-cache
 ```
 
 The OpenRecon zip is installable through the OpenRecon package mechanism; the FIRE directory contains its `Ice` tree and `INSTALL_FIRE.txt`.
@@ -437,7 +437,7 @@ The build checks the local Docker cache first, including `myrecon:1.0.0`, and fa
 
 ```bash
 cd recipes/myrecon
-BUILD_PACKAGE_SELECTION=both /bin/bash ../build.sh
+/bin/bash ../build.sh --local-cache
 ```
 
 The packager runs a privileged nested Docker build for `linux/amd64` and needs substantial temporary disk space. It also renders `README.md` to PDF. If `mdpdf` is unavailable, the build installs the required Node/NVM tooling; `--ignore-mdpdf` is useful only when the recipe already supplies `docs.pdf` or `README.pdf`.
