@@ -205,25 +205,9 @@ python3 /buildhostdirectory/dicom2mrd.py \
   /buildhostdirectory/local-test/dicom
 ```
 
-The converter should report one series containing 160 images. Verify the resulting file before starting the server:
+The converter should report one series containing 160 images. Verify the resulting file `/buildhostdirectory/local-test/input_data.h5` before starting the server by opening it in the H5Web hdf viewer inside VScode.
 
-```bash
-ls -lh /buildhostdirectory/local-test/input_data.h5
-
-python3 - <<'PY'
-import ismrmrd
-
-path = "/buildhostdirectory/local-test/input_data.h5"
-dataset = ismrmrd.Dataset(path, "dataset", create_if_needed=False)
-count = dataset.number_of_images("image_0")
-dataset.close()
-
-print(f"{path}: image_0 contains {count} image(s)")
-assert count == 160, f"Expected 160 converted images, found {count}"
-PY
-```
-
-The generated HDF5 file is approximately 57 MB. It remains on the host under `recipes/openreconi2iexample/local-test/input_data.h5` after you exit the container.
+The generated HDF5 file remains on the host under `recipes/openreconi2iexample/local-test/input_data.h5` after you exit the container.
 
 ### Start the MRD server and run the client
 
@@ -266,38 +250,7 @@ trap - EXIT
 
 This explicit parameter payload sends original images, inverted images, and a simple foreground segmentation. For a straightforward single-series magnitude input, expect output groups `image_99`, `image_100`, and `image_101`. More complex inputs can be split into additional groups.
 
-Count the input and output MRD images and inspect the runtime markers:
-
-```bash
-python3 - <<'PY'
-import ismrmrd
-
-for path in (
-    "/buildhostdirectory/local-test/input_data.h5",
-    "/buildhostdirectory/local-test/openrecon_output.h5",
-):
-    dataset = ismrmrd.Dataset(path, "dataset", create_if_needed=False)
-    image_groups = [
-        group for group in dataset.list()
-        if group.startswith(("image_", "images_"))
-    ]
-    counts = {
-        group: dataset.number_of_images(group)
-        for group in image_groups
-    }
-    print(f"{path}: {sum(counts.values())} image(s) {counts}")
-    dataset.close()
-PY
-
-grep -E 'openreconi2iexample runtime version|OPENRECONI2I_BATCH' \
-  /buildhostdirectory/local-test/server.log | tail -20
-```
-
-Open `recipes/openreconi2iexample/local-test/openrecon_output.h5` with the VS Code H5Web extension to inspect the returned images. Install it locally if needed:
-
-```bash
-code --install-extension h5web.vscode-h5web
-```
+Open `recipes/openreconi2iexample/local-test/openrecon_output.h5` with the VS Code H5Web extension to inspect the returned images. 
 
 Exit the container, run the deploy smoke test against the image, and prove that the expected local tag exists:
 
@@ -305,11 +258,7 @@ Exit the container, run the deploy smoke test against the image, and prove that 
 exit
 
 sf-test openreconi2iexample --architecture x86_64
-docker image inspect "openreconi2iexample:${EXAMPLE_VERSION}" \
-  --format '{{.RepoTags}} {{.Architecture}}'
 ```
-
-The image inspection should show the expected versioned tag and `amd64` architecture.
 
 ### Build the example OpenRecon and FIRE packages
 
@@ -327,48 +276,20 @@ python -m pip install --upgrade pip
 python -m pip install jsonschema packaging
 ```
 
-The checked-in `recipes/openreconi2iexample/params.sh` must name the same version you just built. Assert that it matches before starting the package build:
-
-```bash
-grep -E '^export (toolName|version|baseDockerImage)=' \
-  recipes/openreconi2iexample/params.sh
-
-PACKAGE_VERSION=$(
-  source recipes/openreconi2iexample/params.sh
-  printf '%s' "$version"
-)
-test "$PACKAGE_VERSION" = "$EXAMPLE_VERSION" || {
-  echo "Version mismatch: container=$EXAMPLE_VERSION package=$PACKAGE_VERSION" >&2
-  exit 1
-}
-
-docker image inspect "openreconi2iexample:${EXAMPLE_VERSION}" >/dev/null
-```
-
-If the two repositories have moved to different example versions, update both checkouts to current `main` and rebuild the Neurocontainer before continuing. Do not package one version under another version's metadata.
+The checked-in `recipes/openreconi2iexample/params.sh` must name the same version you just built. Assert that it matches before starting the package build.
 
 Build both scanner formats from the local Docker image:
 
 ```bash
 cd recipes/openreconi2iexample
-BUILD_PACKAGE_SELECTION=both /bin/bash ../build.sh
-
-find openrecon -maxdepth 1 -name 'OpenRecon_*.zip' -print
-find fire -maxdepth 1 -type d -name 'FIRE_*' -print
+/bin/bash ../build.sh
 ```
 
-For version `1.0.89`, the expected outputs are:
-
-```text
-openrecon/OpenRecon_neurodesk_openreconi2iexample_V1.0.89.zip
-fire/FIRE_neurodesk_openreconi2iexample_V1.0.89/
-```
-
-The version changes as the reference recipe is released. Treat the filenames printed by the build as authoritative. The OpenRecon zip is installable through the OpenRecon package mechanism; the FIRE directory contains its `Ice` tree and `INSTALL_FIRE.txt`.
+The OpenRecon zip is installable through the OpenRecon package mechanism; the FIRE directory contains its `Ice` tree and `INSTALL_FIRE.txt`.
 
 Once this complete example works, return to your Neurocontainers checkout and adapt the recipe for your own application.
 
-## 4. Create the Neurocontainer recipe
+## 4. Create a new Neurocontainer recipe
 
 Use a short lowercase name containing only letters and numbers, for example `myrecon`. Published OpenRecon recipe names must not contain underscores.
 
