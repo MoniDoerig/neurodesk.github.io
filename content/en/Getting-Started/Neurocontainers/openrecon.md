@@ -546,24 +546,23 @@ You therefore normally submit only the Neurocontainers pull request. Do not open
 ### Create and verify the codespace
 
 1. Fork [`neurodesk/neurocontainers`](https://github.com/neurodesk/neurocontainers/fork).
-2. In your fork, select **Code > Codespaces > Create codespace on main**.
-3. When setup finishes, create a branch rather than editing `main` directly.
-4. Install Python 3.13 and create the required environment:
+2. Make sure your fork's `main` branch is up to date, then select **Code > Codespaces > Create codespace on main**. The repository's development-container configuration installs Python 3.13, creates the `env` virtual environment, installs Neurocontainers, and starts a Docker daemon for the codespace.
+3. If you created the codespace before the development-container configuration was updated, first synchronize your fork and then create a new codespace. Alternatively, pull the updated configuration and select **Codespaces: Rebuild Container > Full Rebuild** from the VS Code Command Palette.
+4. When setup finishes, create a branch rather than editing `main` directly, activate the environment, and verify both Neurocontainers and Docker:
 
    ```bash
    git switch -c add-MYPROJECT-openrecon
-   curl -LsSf https://astral.sh/uv/install.sh | sh
-   export PATH="$HOME/.local/bin:$PATH"
-   uv python install 3.13
-   uv venv --python 3.13 --seed .venv
-   source .venv/bin/activate
+   source env/bin/activate
    python --version  # Must report Python 3.13.x
-   python -m pip install -r requirements.txt
-   python -m pip install -e .
    python -m builder --help
    sf-build --help
-   docker version
+   docker info
+   docker buildx version
+   docker run --rm hello-world
+   docker run --rm --platform linux/amd64 alpine uname -m
    ```
+
+   The Python command must report `3.13.x`, `docker info` must show a reachable server, and the final command must print `x86_64`. If Docker is missing or cannot reach its daemon, do not install or start Docker manually. Open **Codespaces: View Creation Logs** to check whether the codespace entered recovery mode, then synchronize the fork and perform a full rebuild or create a new codespace.
 
 5. Follow section 3 to run the complete example, then sections 4 and 5 for your own recipe. The `openreconi2iexample` recipe, `fulltest.yaml`, `sf-login`, and MRD server/client commands are the same as in a local Linux environment.
 6. Use the preinstalled H5Web extension to inspect `.h5` outputs. Install a NIfTI viewer extension only if your pipeline produces NIfTI intermediates.
@@ -571,7 +570,7 @@ You therefore normally submit only the Neurocontainers pull request. Do not open
 
 ### Build the packages in the same codespace
 
-The codespace's Docker daemon is shared with terminals in that codespace, so it can package the image you built locally there. After the `sf-login` build succeeds:
+The dedicated Docker daemon in the codespace is available to every terminal in that codespace, so the OpenRecon packaging build can use the image produced there by `sf-login`. After the `sf-login` build succeeds:
 
 ```bash
 cd /workspaces
