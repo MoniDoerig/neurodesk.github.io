@@ -12,28 +12,19 @@ description: >
 
 ## Build an OpenRecon/FIRE package
 
-This guide covers the complete workflow:
+### Choose a development environment
 
-1. set up Git, Docker, Python, and Visual Studio Code;
-2. create and test an x86_64 Neurocontainer with the Python MRD server;
-3. build OpenRecon and FIRE packages locally;
-4. submit the recipe so GitHub - our Actions builds, tests, publishes, and packages it; and
-5. use GitHub Codespaces when a local setup is not available.
-
-### What the two repositories produce
-
-| Repository | Your source files | Result |
+| Development path | Complete these setup sections | Continue at |
 | --- | --- | --- |
-| [`neurodesk/neurocontainers`](https://github.com/neurodesk/neurocontainers) | `build.yaml`, application code, `OpenReconLabel.json`, `OpenReconREADME.md`, tests, and permitted test assets | The tested Linux x86_64 Docker/SIF application image |
-| [`neurodesk/openrecon`](https://github.com/neurodesk/openrecon) | Packaging metadata synchronized from the released Neurocontainer | `OpenRecon_<vendor>_<name>_V<version>.zip` and a `FIRE_<vendor>_<name>_V<version>` bundle |
+| Local workstation | 1. Set up a local computer; 2. Fork and set up Neurocontainers locally | 4. Complete example |
+| GitHub Codespaces | 3. Set up Neurocontainers in GitHub Codespaces | 4. Complete example |
 
-The application image and scanner packages are separate build stages. A Neurocontainer build does not by itself create an installable Openrecon scanner package.
 
-## 1. Set up your computer
+## 1. Set up on a local computer
 
-You need [Git](https://git-scm.com/downloads), [Docker](https://docs.docker.com/get-docker/), **[Python 3.13](https://www.python.org/downloads/)**, and [Visual Studio Code](https://code.visualstudio.com/download). A GitHub account is required only when you are ready to fork repositories, use Codespaces, or submit changes.
+You need [Git](https://git-scm.com/downloads), [Docker](https://docs.docker.com/get-docker/), **[Python 3.13](https://www.python.org/downloads/)**, and [Visual Studio Code](https://code.visualstudio.com/download). A GitHub account is required when you are ready to fork repositories, use Codespaces, or submit changes.
 
-**Use Python 3.13 right now. Neurocontainers fails with older Python versions, even where older project metadata or a prebuilt development environment suggests that an earlier version is supported.**
+**This was tested with Python 3.10 to 3.13.**
 
 ### Windows
 
@@ -41,7 +32,7 @@ Use [WSL 2](https://learn.microsoft.com/windows/wsl/install) with a Linux distri
 
 Keep the checkout in the WSL filesystem, for example under `~/src`, rather than under `/mnt/c`; Docker bind mounts perform better there. Do not run the Bash build scripts from Command Prompt or PowerShell.
 
-Install Python 3.13 inside the WSL distribution, not only on the Windows host. If the distribution does not provide Python 3.13, use the `uv` fallback described under Linux below.
+Install Python 3.13 inside the WSL distribution. If the distribution does not provide Python 3.13, use the `uv` option described under Linux below.
 
 ### macOS
 
@@ -58,9 +49,9 @@ brew install git python@3.13 p7zip
 
 ### Linux
 
-Install Git, Python 3.13 with `venv` support, 7-Zip, and [Docker Engine](https://docs.docker.com/engine/install/) using your distribution's instructions. Configure Docker so your normal user can run it, then log out and back in if the group membership changed. Do not assume that the distribution's unversioned `python3` package is new enough.
+Install Git, Python 3.13 with `venv` support, 7-Zip, and [Docker Engine](https://docs.docker.com/engine/install/) using your distribution's instructions. Configure Docker so your normal user can run it, then log out and back in if the group membership changed. 
 
-For Debian or Ubuntu, the non-Docker prerequisites are:
+For Debian or Ubuntu, the prerequisites are:
 
 ```bash
 sudo apt update
@@ -86,7 +77,6 @@ docker version
 docker run --rm hello-world
 docker buildx version
 docker run --rm --platform linux/amd64 alpine uname -m
-code --version
 ```
 
 Configure the identity Git will record in your commits:
@@ -96,9 +86,9 @@ git config --global user.name "YOUR NAME"
 git config --global user.email "YOUR GITHUB EMAIL"
 ```
 
-The Python command must report `3.13.x`, and the last Docker command should print `x86_64`. If `docker version` cannot reach the server, start Docker Desktop or the Linux Docker service before continuing. If VS Code is installed but `code` is not on the path, install its shell command from the VS Code Command Palette.
+The Python command must report `3.13.x`, and the last Docker command should print `x86_64`. If `docker version` cannot reach the server, start Docker Desktop or the Linux Docker service before continuing.
 
-## 2. Fork and set up Neurocontainers
+## 2. Fork and set up Neurocontainers locally
 
 Fork [`neurodesk/neurocontainers`](https://github.com/neurodesk/neurocontainers/fork) into your GitHub account, then clone your fork. Replace `YOUR_GITHUB_USERNAME` below:
 
@@ -122,17 +112,48 @@ python -m pip install -e .
 sf-build --help
 ```
 
-Activate the environment again with `source .venv/bin/activate` whenever you open a new terminal.
+Activate the environment with `source .venv/bin/activate` whenever you open a new terminal.
 
-## 3. Complete example: build and run openreconi2iexample
+## 3. Set up Neurocontainers in GitHub Codespaces
 
-Run this example before creating your own recipe. It proves that Python, the Neurocontainers builder, Docker's x86_64 support, the Python MRD server, and local scanner packaging all work together.
+Use this section instead of sections 1 and 2 when Docker and Python are not available on your computer.
 
-All commands in this section start in the root of your `neurocontainers` checkout with its Python 3.13 environment active:
+1. Fork [`neurodesk/neurocontainers`](https://github.com/neurodesk/neurocontainers/fork).
+2. Make sure your fork's `main` branch is up to date, then select **Code > Codespaces > Create codespace on main**. The repository's development-container configuration installs Python 3.13, creates the `env` virtual environment, installs Neurocontainers, and connects the codespace to a Docker daemon.
+3. When setup finishes, create a new branch, activate the environment, and verify both Neurocontainers and Docker:
+
+   ```bash
+   git switch -c add-MYPROJECT-openrecon
+   source env/bin/activate
+   python --version  # Must report Python 3.13.x
+   python -m builder --help
+   sf-build --help
+   docker info
+   docker run --rm hello-world
+   ```
+
+
+5. Continue with section 4. The `openreconi2iexample` recipe, `fulltest.yaml`, `sf-login`, and MRD server/client commands are the same as in a local Linux environment.
+6. Use the preinstalled H5Web extension to inspect `.h5` outputs and niivue for `.nii`.
+7. Never upload identifiable DICOM data to the codespace or commit private test data.
+
+A codespace is an interactive, time-limited development environment. [GitHub's default idle timeout is 30 minutes and the maximum user-configurable timeout is 4 hours](https://docs.github.com/en/codespaces/setting-your-user-preferences/setting-your-timeout-period-for-github-codespaces); when a codespace stops, its running processes stop too. Use the pull-request workflow in section 9 for builds that must continue unattended.
+
+## 4. Complete example: build and run openreconi2iexample
+
+Run this example before creating your own recipe. All commands in this section start in the root of your `neurocontainers` checkout with its Python 3.13 environment active. For a local checkout, run:
 
 ```bash
 cd /PATH/TO/neurocontainers
 source .venv/bin/activate
+python --version  # Must report Python 3.13.x
+```
+
+In GitHub Codespaces, the checkout is already under `/workspaces` and the configured environment is named `env`:
+
+```bash
+cd /workspaces/neurocontainers
+source env/bin/activate
 python --version  # Must report Python 3.13.x
 ```
 
@@ -161,8 +182,6 @@ grep -qxF 'recipes/openreconi2iexample/local-test/' .git/info/exclude || \
 
 mkdir -p recipes/openreconi2iexample/local-test
 ```
-
-Confirm that `git status --short` does not list `local-test`. Do not add other clinical DICOM data to the repository; use only data that is appropriately de-identified and that you are permitted to process.
 
 ### Build the x86_64 image and enter it
 
@@ -289,7 +308,7 @@ The OpenRecon zip is installable through the OpenRecon package mechanism; the FI
 
 Once this complete example works, return to your Neurocontainers checkout and adapt the recipe for your own application.
 
-## 4. Create a new Neurocontainer recipe
+## 5. Create a new Neurocontainer recipe
 
 Use a short lowercase name containing only letters and numbers, for example `myrecon`. Published OpenRecon recipe names must not contain underscores.
 
@@ -341,7 +360,7 @@ Keep `VERSION_WILL_BE_REPLACED_BY_SCRIPT` in the label's version and version-der
 Keep `OpenReconLabel.json` in the Neurocontainers recipe. Current release automation copies it into OpenRecon and creates `params.sh`; contributors no longer need to maintain a second copy manually. If `OpenReconREADME.md` is present, the automation also copies it to the openrecon package repository as `README.md`.
 
 
-## 5. Validate, build, and test locally
+## 6. Validate, build, and test the Neurocontainer
 
 Run metadata validation and any focused tests first:
 
@@ -398,7 +417,7 @@ sf-test myrecon --architecture x86_64
 
 `sf-test` checks the built image's deployment contract. Your `fulltest.yaml` is exercised by the current pull-request candidate workflow; it should contain meaningful application/runtime assertions.
 
-## 6. Build OpenRecon and FIRE packages locally
+## 7. Build OpenRecon and FIRE packages
 
 First build the Neurocontainer as described above. The local Docker image must be tagged `myrecon:<version>`, which is the tag produced by `sf-build` and `sf-login`.
 
@@ -451,11 +470,21 @@ recipes/myrecon/fire/FIRE_<vendor>_<name>_V<version>/
 
 The FIRE output is a directory containing an `Ice` tree and `INSTALL_FIRE.txt`. Keep the directory structure unchanged.
 
-## Installing OpenRecon packages
+### Codespaces notes
+
+If you used the Codespaces setup in section 3, the commands above work without modification: from `/workspaces/neurocontainers`, `cd ..` moves to `/workspaces`, where you can clone the OpenRecon repository. 
+
+FIRE images can be large and Codespaces storage is small. Check `df -h` before building both packages, select a larger codespace if necessary, and stop or delete the codespace when you finish to avoid unnecessary usage.
+
+## 8. Install and test the scanner package
+
+Use the package produced in section 7 for local scanner testing. The same installation procedures apply to an artifact published later through the GitHub Actions flow in section 9.
+
+### Install an OpenRecon package
 
 Make sure that no protocol is open, because an open protocol can prevent installation of a new package.
 
-### Installing a new OpenRecon package on NumarisX VA70 and above (e.g. XB10)
+#### NumarisX VA70 and above (for example, XB10)
 
 For software versions NumarisX VA70 and above, such as NumarisX XB10, use the Numaris/Edge routine for installing OpenRecon applications. A short summary of the installation steps is provided below.
 
@@ -481,7 +510,7 @@ For software versions NumarisX VA70 and above, such as NumarisX XB10, use the Nu
    syngo.MR.Digi.Utils.Console.exe store --list
    ```
 
-### Installing and testing a new OpenRecon package on XA60 and XA61
+#### XA60 and XA61
 
 Copy the OpenRecon zip file into `C:\Program Files\Siemens\Numaris\OperationalManagement\FileTransfer\incoming`.
 
@@ -497,7 +526,7 @@ Once the log file is written, you can open a protocol and check whether the pack
 
 Run the sequence with OpenRecon enabled and check for errors in the log viewer at `C:\ProgramData\Siemens\Numaris\log\OpenRecon.utr`.
 
-## Installing FIRE packages
+### Install a FIRE package
 
 Unpack the generated FIRE zip and read its `INSTALL_FIRE.txt` before changing the scanner. The archive root contains an `Ice` folder laid out like `%CustomerIceProgs%`, normally under `MriCustomer`.
 
@@ -505,7 +534,7 @@ Copy or merge the package's `Ice` folder into `MriCustomer` while preserving its
 
 FIRE installation is a scanner-administration operation. Follow your site's scanner-version-specific procedure and change-control process in addition to the generated instructions.
 
-## Build and publish through GitHub Actions
+## 9. Build and publish through GitHub Actions
 
 ### Commit and open the Neurocontainers pull request
 
@@ -527,7 +556,7 @@ Open a pull request from your fork to `neurodesk/neurocontainers:main`. Include:
 - expected returned series and important parameter combinations; and
 - limitations that a scanner tester must know.
 
-The current [`PR container candidate`](https://github.com/neurodesk/neurocontainers/blob/main/.github/workflows/pr-container-candidate.yml) workflow accepts fork pull requests. It validates the changed recipe and OpenRecon metadata, builds every declared architecture/variant, creates Docker and SIF candidates, runs the deploy and `fulltest.yaml` checks and uploads an immutable candidate artifact. 
+The current [`PR container candidate`](https://github.com/neurodesk/neurocontainers/blob/main/.github/workflows/pr-container-candidate.yml) workflow accepts fork pull requests. It validates the changed recipe and OpenRecon metadata, builds every declared architecture/variant, creates Docker and SIF candidates, runs the deploy and `fulltest.yaml` checks and uploads an immutable candidate artifact.
 
 ### What happens after merge
 
@@ -541,54 +570,11 @@ The current release sequence is:
 
 You therefore normally submit only the Neurocontainers pull request. Do not open a hand-written OpenRecon packaging pull request unless a maintainer asks for a packaging-only change or the automatic synchronization fails.
 
-## Build in GitHub Codespaces
+## 10. Troubleshooting and scanner notes
 
-### Create and verify the codespace
+### Package behavior and metadata
 
-1. Fork [`neurodesk/neurocontainers`](https://github.com/neurodesk/neurocontainers/fork).
-2. Make sure your fork's `main` branch is up to date, then select **Code > Codespaces > Create codespace on main**. The repository's development-container configuration installs Python 3.13, creates the `env` virtual environment, installs Neurocontainers, and starts a Docker daemon for the codespace.
-3. If you created the codespace before the development-container configuration was updated, first synchronize your fork and then create a new codespace. Alternatively, pull the updated configuration and select **Codespaces: Rebuild Container > Full Rebuild** from the VS Code Command Palette.
-4. When setup finishes, create a branch rather than editing `main` directly, activate the environment, and verify both Neurocontainers and Docker:
-
-   ```bash
-   git switch -c add-MYPROJECT-openrecon
-   source env/bin/activate
-   python --version  # Must report Python 3.13.x
-   python -m builder --help
-   sf-build --help
-   docker info
-   docker buildx version
-   docker run --rm hello-world
-   docker run --rm --platform linux/amd64 alpine uname -m
-   ```
-
-   The Python command must report `3.13.x`, `docker info` must show a reachable server, and the final command must print `x86_64`. If Docker is missing or cannot reach its daemon, do not install or start Docker manually. Open **Codespaces: View Creation Logs** to check whether the codespace entered recovery mode, then synchronize the fork and perform a full rebuild or create a new codespace.
-
-5. Follow section 3 to run the complete example, then sections 4 and 5 for your own recipe. The `openreconi2iexample` recipe, `fulltest.yaml`, `sf-login`, and MRD server/client commands are the same as in a local Linux environment.
-6. Use the preinstalled H5Web extension to inspect `.h5` outputs. Install a NIfTI viewer extension only if your pipeline produces NIfTI intermediates.
-7. Commit and push the recipe as described above. Never upload identifiable DICOM data to the codespace or commit private test data.
-
-### Build the packages in the same codespace
-
-The dedicated Docker daemon in the codespace is available to every terminal in that codespace, so the OpenRecon packaging build can use the image produced there by `sf-login`. After the `sf-login` build succeeds:
-
-```bash
-cd /workspaces
-git clone https://github.com/neurodesk/openrecon.git
-cd openrecon
-python3.13 -m venv .venv
-source .venv/bin/activate
-python --version  # Must report Python 3.13.x
-python -m pip install jsonschema packaging
-```
-
-Then follow section 6, using `/workspaces/neurocontainers` as the Neurocontainers checkout. FIRE images can be large and Codespaces storage is finite. Check `df -h` before building both packages, select a larger codespace if necessary, and stop or delete the codespace when you finish to avoid unnecessary usage charges.
-
-Do not treat a codespace as an unattended build service. [GitHub's default idle timeout is 30 minutes and the maximum user-configurable timeout is 4 hours](https://docs.github.com/en/codespaces/setting-your-user-preferences/setting-your-timeout-period-for-github-codespaces); when a codespace stops, its running processes stop too. Commit and push source changes, copy any required local artifacts, and use the upstream GitHub Actions pull-request workflow for a build that must continue without an interactive development session.
-
-## Tips, tricks, and troubleshooting for OpenRecon
-
-### Sent image values must fit within a 4096-value range
+#### Sent image values must fit within a 4096-value range
 
 OpenRecon can send a maximum integer range of `4096` values back to the scanner.
 
@@ -596,7 +582,7 @@ If the returned images exceed that range, the values can wrap around instead of 
 
 Scale or clamp derived image data into the scanner-safe range before sending it from the MRD server.
 
-### Choice parameters need a non-empty default
+#### Choice parameters need a non-empty default
 
 Current Neurocontainers and OpenRecon packaging validators reject a `choice` parameter whose default is empty or does not match one of its value IDs. Older packages created without this check could install successfully but remain unselectable in the sequence tab.
 
@@ -668,7 +654,9 @@ Set the default to one of the available `values` IDs instead:
 }
 ```
 
-### Do not use Prio Recon with OpenRecon
+### Scanner runtime
+
+#### Do not use Prio Recon with OpenRecon
 
 This option has to be disabled in an OpenRecon sequence:
 
@@ -676,7 +664,7 @@ This option has to be disabled in an OpenRecon sequence:
 
 Right-click `Sequence` in the Scan Queue, then select `Edit Properties` (`Alt+Enter`) and `Execution`.
 
-### CUDA version
+#### CUDA version
 
 Make sure that you install the correct CUDA version in the container and that it does not get overwritten by a `pip install`. The current OpenRecon package build rejects a CUDA toolkit or PyTorch CUDA version newer than 11.8.
 
@@ -687,15 +675,7 @@ Always double-check in the container with:
 python -c "import torch; print(torch.version.cuda)"
 ```
 
-### Versioning of containers
-
-OpenRecon requires container versions. For example, on the scanner, version `1.2.3` only shows the major version in the selection box, but hovering over the name shows the full version:
-
-![Seeing the specific version of the container](/static/docs/neurocontainers/versions.JPG)
-
-OpenRecon will not install an update to a container with the same version.
-
-### High-performance computing license side effects
+#### High-performance computing license side effects
 
 For OpenRecon to work, the `N_High_End_Computing` license must be active on the scanner.
 
@@ -705,7 +685,17 @@ Turn the license off by commenting it out. Add `#` in front of the relevant line
 
 Restart the whole system. Restarting the workspace is not enough.
 
-### Cleaning up packages on the scanner
+### Versioning and maintenance
+
+#### Versioning of containers
+
+OpenRecon requires container versions. For example, on the scanner, version `1.2.3` only shows the major version in the selection box, but hovering over the name shows the full version:
+
+![Seeing the specific version of the container](/static/docs/neurocontainers/versions.JPG)
+
+OpenRecon will not install an update to a container with the same version.
+
+#### Cleaning up packages on the scanner (on XA60/61)
 
 After installing and testing different OpenRecon containers, old containers remain in the host registry and consume space on the host C: drive.
 
