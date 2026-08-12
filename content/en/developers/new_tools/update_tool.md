@@ -8,7 +8,7 @@ description: >-
 
 Updating an existing container is quite easy with this new build system. 
 
-Here is a step-by-step on how to procede by modifying the .yaml file. It is also possible to edit the containers by using our newly released web browser UI : https://neurodesk.org/neurocontainers-ui/ 
+Here is a step-by-step on how to procede by modifying the .yaml file. It is also possible to edit the containers by using our web browser UI: https://neurodesk.org/neurocontainers-ui/
 
 _There's a [detailled version](#detailled-version) below including screenshots and an example._
 <br></br>
@@ -18,7 +18,7 @@ _There's a [detailled version](#detailled-version) below including screenshots a
 
 1. Access the [Neurodesk Containers repository](https://github.com/neurodesk/neurocontainers)
 2. Fork the repository
-3. Using your preferred development environment (such as VS Code locally or GitHub Codespaces), make changes to the desired container.
+3. Set up Neurocontainers in your preferred development environment, such as VS Code locally or GitHub Codespaces, then make changes to the desired container.
 
 <div style="margin-left: 2em;">
 
@@ -38,10 +38,10 @@ Open the `build.yaml` file. Make the necessary updates to:
 Make sure your changes are valid.
 In the terminal, run:
 ```shell
-./builder/build.py generate <toolname> 
+builder generate <toolname> --recreate
 
-#This second step can take some time
-./builder/build.py generate <toolname> --recreate --build --test 
+# This second step requires Docker and can take some time
+builder test <toolname> --recreate --build
 ```
 5. Commit and push your changes
 6. Create a pull request
@@ -78,9 +78,50 @@ If changes are commited to the Neurodesk/neurocontainers repository, you will se
 
 <img src="{{< relurl "/static/developers/new_tools/update_tool/neurocontainers-commits-behind.png" >}}" width="450">
 
-## 3. Create and Edit a Codespace
+## 3. Set Up Your Development Environment
 
-Once this is done, you will want to start a Codespace using by: 
+Choose either a local setup or GitHub Codespaces. Both options install Neurocontainers so that the `builder` command is available.
+
+### Option A: Set Up Neurocontainers Locally
+
+Install Git, Python 3.13, and Docker before continuing. Confirm that they are available:
+
+```shell
+git --version
+python3.13 --version
+docker version
+docker buildx version
+```
+
+Clone your fork, add the Neurodesk repository as the upstream remote, and create a branch for your update. Replace `YOUR_GITHUB_USERNAME` and `TOOLNAME` below:
+
+```shell
+git clone https://github.com/YOUR_GITHUB_USERNAME/neurocontainers.git
+cd neurocontainers
+git remote add upstream https://github.com/neurodesk/neurocontainers.git
+git switch -c update-TOOLNAME
+```
+
+Create an isolated Python environment and install Neurocontainers, including the `builder` command:
+
+```shell
+python3.13 -m venv .venv
+source .venv/bin/activate
+python --version # Must report Python 3.13.x
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install -e .
+
+builder --help
+docker info
+docker run --rm hello-world
+```
+
+Activate the environment with `source .venv/bin/activate` whenever you open a new terminal.
+
+### Option B: Create and Edit a Codespace
+
+Use Codespaces when Docker or Python is unavailable on your local computer. Make sure your fork's `main` branch is up to date, then create a Codespace:
 
 - Clicking the **+ (Create new...)** button in the top right corner. _(it's a + sign button)_
 - Selecting **Codespaces** > **New codespace**.
@@ -100,13 +141,18 @@ This opens an editable environment directly in your browser.
 <img src="{{< relurl "/static/developers/new_tools/update_tool/codespace.png" >}}" width="650">
 <br><br>
 
-In the terminal, run the following lines to configure your codespace environment.
+The repository's development-container configuration creates the `env` virtual environment and installs Neurocontainers automatically. In the terminal, activate the environment and verify the setup:
+
 ```shell
-python3 -m venv env
+git switch -c update-TOOLNAME
 source env/bin/activate
-pip install -r requirements.txt
+python --version # Must report Python 3.13.x
+builder --help
+docker info
+docker run --rm hello-world
 ```
-This will install a series of packages to allow you to make changes to neurocontainers.
+
+If Codespaces setup fails, first make sure your fork's `main` branch is up to date. Then fully rebuild the container or create a new codespace; restarting a failed codespace does not apply updated development-container configuration.
 
 <div style="margin-left: 2em;">
 
@@ -173,16 +219,18 @@ Before committing, make sure your changes are valid.
 
 In the terminal, run:
 ```shell
-./builder/build.py generate connectomeworkbench #Replace connectomeworkbench with the name of the folder you updated
+builder generate connectomeworkbench --recreate # Replace connectomeworkbench with the name of the folder you updated
 
-#This second step can take some time
-./builder/build.py generate connectomeworkbench --recreate --build --test #Replace connectomeworkbench with the name of the folder you updated
+# This second step requires Docker and can take some time
+builder test connectomeworkbench --recreate --build # Replace connectomeworkbench with the name of the folder you updated
 ```
 
-This script will:
+The first command will:
 - Parse your `build.yaml`
 - Check for syntax errors
-- Show the build steps without actually building the full container
+- Generate the Dockerfile without building the container
+
+The second command builds the Docker image and runs the recipe's tests. If Docker is unavailable, successful generation is still useful validation, but it does not prove that the image builds or that its tests pass.
 
 You will be able to see the progress for each of the building steps. 
 <img src="{{< relurl "/static/developers/new_tools/update_tool/buildyaml-building.png" >}}" width="650">
@@ -190,7 +238,7 @@ You will be able to see the progress for each of the building steps.
 
 If there are errors, correct them before proceeding.
 
-Once you see `Docker image built successfully at connectomeworkbench:2.0.1`, you are ready to commit and push your changes.
+Once the build and tests finish successfully, you are ready to commit and push your changes.
 
 
 ## 6. Commit and Push Your Changes
