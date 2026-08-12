@@ -91,11 +91,57 @@ Keep your original files until you have confirmed that the upload completed succ
 
 There are several tools for downloading data through the XNAT REST API. The [XNAT Web Services Client Tools](https://wiki.xnat.org/xnat-tools/xnat-web-services-client-tools) documentation describes options including PyXNAT, XNATpy, the XNAT Data Client (XDC), and YAXIL.
 
-These tools can also be run on a Stanford system that has Oak mounted. Set an approved Oak project directory as the download destination to transfer data directly from XNAT to Oak instead of downloading it through your local computer.
+These tools can also be run on a Stanford system that has Oak mounted such as sherlock. Set an approved Oak project directory as the download destination to transfer data directly from XNAT to Oak instead of downloading it through your local computer.
 
-{{< alert color="warning" >}}
-The original XNAT command-line tool suite is deprecated. Select a current client that is compatible with the Lucas Centre XNAT version, and store data only in an Oak location approved for your project.
-{{< /alert >}}
+Here is an example how to transfer XNAT data to Oak on Sherlock:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+$HOME/.local/bin/uv tool install xnat      # puts the `xnat` CLI on PATH
+```
+
+On the XNAT web UI (https://xnat-lucas.neurodesk.org/): log in → username menu (top right) → Manage Alias Tokens → Create Alias Token -> View. Fill in alias as login below and secret as password:
+
+```bash
+cat > $HOME/.netrc <<'EOF'
+machine xnat-lucas.neurodesk.org
+login 3f2a...
+password 9c81...
+EOF
+chmod 600 $HOME/.netrc
+```
+
+set xnat host:
+
+```bash
+export XNAT_HOST=https://xnat-lucas.neurodesk.org
+```
+
+list projects:
+
+```bash
+xnat list projects
+```
+
+list subjects:
+
+```bash
+xnat list subjects --project REPLACE_THIS_WITH_YOUR_PROJECT_NAME
+```
+
+download a whole project:
+
+```bash
+xnat download project REPLACE_THIS_WITH_YOUR_PROJECT_NAME $OAK/REPLACE_THIS_WITH_YOUR_TARGET_DIRECTORY
+```
+
+download one subject:
+
+```bash
+xnat download batch --project REPLACE_THIS_WITH_YOUR_PROJECT_NAME --subject SUBJ01 --level SUBJECT $OAK/REPLACE_THIS_WITH_YOUR_TARGET_DIRECTORY
+```
+
+The target directory must already exist for batch. --subject is an fnmatch pattern (--subject 'sub-0*' grabs a range), but a typo silently matches nothing instead of erroring. Watch for the Found match: ... lines in the output.
 
 ## Run processing with XNAT Container Service
 
